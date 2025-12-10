@@ -1,4 +1,3 @@
-# main.py
 import Encrypt
 import Decrypt
 
@@ -15,9 +14,25 @@ def pkcs7_pad(text_bytes):
 
 def pkcs7_unpad(text_bytes):
     """
-    Removes PKCS#7 padding after decryption.
+    Removes PKCS#7 padding with STRICT validation.
+    If the padding is corrupt (wrong key or tampering), this raises a ValueError.
     """
+    if not text_bytes:
+        raise ValueError("Input is empty")
+        
     padding_len = text_bytes[-1]
+    
+    # 1. Validation: Padding length must be reasonable (1-8 for DES)
+    if not (1 <= padding_len <= 8):
+        raise ValueError("Invalid padding length byte")
+    
+    # 2. Validation: Check that *all* padding bytes match the length
+    # e.g. If last byte is 0x03, the last 3 bytes MUST be 0x03 0x03 0x03
+    padding = text_bytes[-padding_len:]
+    for b in padding:
+        if b != padding_len:
+            raise ValueError("Invalid padding bytes")
+            
     return text_bytes[:-padding_len]
 
 def get_key_input():
@@ -47,7 +62,7 @@ def encrypt_full_message(plaintext_str, key_hex, verbose=False):
     cipher_full_hex = ""
     
     # 3. Loop through 8-byte chunks
-    print(f"\n[INTERNAL] Processing {len(padded_data)} bytes in 8-byte blocks...")
+    if verbose: print(f"\n[INTERNAL] Processing {len(padded_data)} bytes in 8-byte blocks...")
     
     for i in range(0, len(padded_data), 8):
         # Extract 8 bytes
@@ -56,7 +71,7 @@ def encrypt_full_message(plaintext_str, key_hex, verbose=False):
         
         # Encrypt this single block
         if verbose: print(f"  -> Encrypting Block {i//8 + 1}: {block_hex}")
-        block_cipher = Encrypt.run_encrypt(block_hex, key_hex, verbose=verbose)
+        block_cipher = Encrypt.run_encrypt(block_hex, key_hex, verbose=False)
         
         # Append to full result
         cipher_full_hex += block_cipher
@@ -77,11 +92,12 @@ def decrypt_full_message(cipher_full_hex, key_hex, verbose=False):
         decrypted_block_hex = Decrypt.run_decrypt(block_hex, key_hex, verbose=False)
         decrypted_bytes += bytes.fromhex(decrypted_block_hex)
         
-    # Remove padding
+    # Remove padding with Error Handling
     try:
         unpadded_data = pkcs7_unpad(decrypted_bytes)
         return unpadded_data.decode('utf-8')
-    except:
+    except Exception as e:
+        # This catches the ValueError from pkcs7_unpad
         return "[Error: Invalid Padding or Key]"
 
 # --- MAIN PROGRAM ---
