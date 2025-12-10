@@ -56,7 +56,7 @@ def encrypt_full_message(plaintext_str, key_hex, verbose=False):
         
         # Encrypt this single block
         if verbose: print(f"  -> Encrypting Block {i//8 + 1}: {block_hex}")
-        block_cipher = Encrypt.run_encrypt(block_hex, key_hex, verbose=False)
+        block_cipher = Encrypt.run_encrypt(block_hex, key_hex, verbose=verbose)
         
         # Append to full result
         cipher_full_hex += block_cipher
