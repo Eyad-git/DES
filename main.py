@@ -111,8 +111,9 @@ def main():
     key_hex = get_key_input()
     
     # 2. Get Any Text
-    plaintext_str = input("\nEnter Message (Any length): ").strip()
-    if not plaintext_str: plaintext_str = "University" # Default
+    default_text = "8787878787878787" # NIST test vector as string
+    plaintext_str = input(f"\nEnter Message (Any length) [Default: {default_text}]: ").strip()
+    if not plaintext_str: plaintext_str = default_text
 
     # 3. Verbose Option
     verbose = input("Show block processing? (y/n): ").lower().startswith('y')
