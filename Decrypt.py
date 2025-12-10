@@ -2,7 +2,7 @@
 import KeySchedule
 import Encrypt
 
-def run_decrypt(ciphertext_hex, key_hex):
+def run_decrypt(ciphertext_hex, key_hex, verbose=False):
     """
     Decrypts a 64-bit block.
     Logic: Uses the exact same algorithm as encryption, 
@@ -15,4 +15,4 @@ def run_decrypt(ciphertext_hex, key_hex):
     keys_reversed = keys[::-1]
     
     # 3. Run the shared DES engine
-    return Encrypt.des_engine(ciphertext_hex, keys_reversed)
+    return Encrypt.des_engine(ciphertext_hex, keys_reversed, verbose)

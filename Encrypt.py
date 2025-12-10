@@ -71,49 +71,48 @@ def s_box_substitution(xored_48):
         col = int(col_bin, 2)
         
         val = S_BOX[i // 6][row][col]
+        # add padding to the output incase its not 32 bits
         output_32 += bin(val)[2:].zfill(4)
     return output_32
 
-def des_engine(text_hex, keys):
+# In Encrypt.py
+
+def des_engine(text_hex, keys, verbose=False): # Added verbose flag
     """
     The Core Feistel Network.
-    Used by BOTH Encrypt and Decrypt (just with different key orders).
     """
-    # 1. Initial Permutation
     text_bin = KeySchedule.hex2bin(text_hex)
     permuted_text = KeySchedule.permute(text_bin, IP)
     
-    # 2. Split into L and R
     l = permuted_text[0:32]
     r = permuted_text[32:64]
     
-    # 3. 16 Rounds
-    for subkey in keys:
+    if verbose:
+        print(f"Initial: {text_hex}")
+        print(f"L0: {KeySchedule.bin2hex(l)} | R0: {KeySchedule.bin2hex(r)}")
+
+    for i, subkey in enumerate(keys): # Enumerate to get round number
         l_prev = l
         r_prev = r
         
-        # L(i) = R(i-1)
         l = r_prev
         
-        # Function f:
-        # Expansion -> XOR -> S-Box -> P-Box
         expanded_r = KeySchedule.permute(r_prev, E)
         xored = xor(expanded_r, subkey)
         substituted = s_box_substitution(xored)
         p_boxed = KeySchedule.permute(substituted, P)
         
-        # R(i) = L(i-1) XOR f(R(i-1), K)
         r = xor(l_prev, p_boxed)
         
-    # 4. Final Swap (R then L)
-    combined = r + l
-    
-    # 5. Final Permutation
+        if verbose:
+            # Print the state after each round
+            print(f"Round {i+1:02}: L={KeySchedule.bin2hex(l)} | R={KeySchedule.bin2hex(r)} | Subkey={KeySchedule.bin2hex(subkey)}")
+
+    combined = r + l # Remember: R then L at the end
     ciphertext_bin = KeySchedule.permute(combined, FP)
     
     return KeySchedule.bin2hex(ciphertext_bin)
 
-def run_encrypt(plaintext_hex, key_hex):
-    # Generate keys normally
+def run_encrypt(plaintext_hex, key_hex, verbose=False):
     keys = KeySchedule.generate_keys(key_hex)
-    return des_engine(plaintext_hex, keys)
+    return des_engine(plaintext_hex, keys, verbose)
